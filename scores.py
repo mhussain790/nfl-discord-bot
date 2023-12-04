@@ -1,12 +1,15 @@
 import os
 import requests
+from dotenv import load_dotenv
 
+load_dotenv()
+
+# Constants
+RAPID_API_KEY = os.getenv('RAPIDAPI_KEY')
 url = "https://odds.p.rapidapi.com/v4/sports/americanfootball_nfl/scores"
-
 querystring = {"daysFrom":"1"}
-
 headers = {
-    "X-RapidAPI-Key": "5a606e8d9cmshe8d8346ac3f1decp185020jsn4225398e4311",
+    "X-RapidAPI-Key": RAPID_API_KEY,
     "X-RapidAPI-Host": "odds.p.rapidapi.com"
 }
 
@@ -65,7 +68,14 @@ async def get_scores():
 
 async def get_avatar(team):
 
+    ####### URL format #######
+    ### https://github.com/mhussain790/nfl-discord-bot/blob/main/img/detroit.png?raw=true
+
+    # https://raw.githubusercontent.com/mhussain790/nfl-discord-bot/main/img/detroit.png
+    ##########################
+
     # Get the list of files
+    img_url_prefix = 'https://github.com/mhussain790/nfl-discord-bot/blob/main/img/'
     path = "./img"
     files = os.listdir(path)
 
@@ -102,6 +112,6 @@ async def get_avatar(team):
         if file in name_array:
             print(f"Found {temp} in {name_array}")
             print(f"{path}/{temp}")
-            return path + '/' + temp
+            return img_url_prefix + '/' + img_url_suffix
 
 get_avatar('san francisco 49ers')
