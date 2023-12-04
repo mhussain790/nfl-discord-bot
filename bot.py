@@ -1,11 +1,13 @@
 import os
 import random
 import discord
+import datetime
 
+from PIL import Image
 from discord.ext import commands
 from dotenv import load_dotenv
 from quote import get_a_quote
-from scores import get_scores, get_avatar
+from scores import get_scores, get_avatar, get_single_game_score
 
 load_dotenv()
 
@@ -72,18 +74,68 @@ async def send_scores(ctx):
             await ctx.send(f"{games['home_team']} VS {games['away_team']} \n No scores yet! Game starts at {games['commence_time']}")
             print(f"No scores yet! Game starts at {games['commence_time']}")
 
+def reformat_datetime(input):
+    # 2023-12-10T18:00:00Z
+    d1 = datetime.datetime.strptime(input,"%Y-%m-%dT%H:%M:%SZ")
+    d2 = d1.strftime("%A, %B %d, %Y at %H:%M:%S")
+
+    return d2
+
+def combine_images(img1, img2):
+    open_img_1 = Image.open(img1)
+    open_img_2 = Image.open(img2)
+
+    combined_img = Image.new('RGB', (open_img_1.width + open_img_2.width, open_img_1.height))
+    combined_img.paste(open_img_1, (0, 0))
+    combined_img.paste(open_img_2, (open_img_1.width, 0))
+
+    return combined_img
+
 @bot.command(name='detroit', help='Responds with Detroit Lions info')
 async def send_scores(ctx):
     if ctx.message.author == bot.user:
         return
     
-    # Send a new random quote
-    image = await get_avatar('detroit')
+    # Get image
+    det_image = await get_avatar('detroit')
 
-    #Send image in message
-    await ctx.send(image)
+    # Get game info
+    game_info = await get_single_game_score('detroit lions')
 
+    # Store dict values
+    away_team = game_info.get("away_team")
+    home_team = game_info.get("home_team")
+    is_scores = game_info.get("scores")
+    home_score = game_info.get("home_score")
+    away_score = game_info.get("away_score")
+    commence_time = game_info.get("commence_time")
 
+    # Check if Detroit is Away/Home
+    if 'detroit' in away_team:
+        title_data = home_team + ' (HOME) VS ' + away_team + ' (AWAY)'
+        # other_image = await get_avatar(home_team)
+    else:
+        title_data = home_team + ' (HOME) VS ' + away_team + ' (AWAY)'
+        # other_image = await get_avatar(away_team)
+
+    # Check if scores is empty
+    if is_scores is None:
+        commence_time = game_info.get("commence_time")
+        formatted_datetime = reformat_datetime(commence_time)
+        output_scores = "No scores yet! Game starts at " + formatted_datetime
+    else:
+        output_scores = home_team + " " + str(home_score) + " - " + str(away_score) + " " + away_team
+
+    # Create separate embeds for each img
+    embed = discord.Embed(title=title_data, description=output_scores, colour=discord.Colour.dark_orange())
+    # embed2 = discord.Embed()
+
+    # Set the images
+    embed.set_thumbnail(url=det_image)
+    # embed2.set_thumbnail(url=other_image)
+
+    # await ctx.send(embeds=[embed1, embed2])
+    await ctx.send(embed=embed)
 
 @bot.command(name='wherethehoesat', help='Responds with a random hoe')
 async def send_hoes(ctx):

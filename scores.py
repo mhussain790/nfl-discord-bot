@@ -23,22 +23,47 @@ def separate_string_dash(name):
     name = name.split("-")
     return name
 
-def get_single_game_score(team):
+async def get_single_game_score(team):
     response = requests.get(url, headers=headers, params=querystring)
 
     for games in response.json():
         if games['home_team'] is not None or games['away_team'] is not None:
-            if team == games['home_team'] or team == games['away_team']:
+            home_team = games['home_team']
+            away_team = games['away_team']
+            
+            if team == home_team.lower() or team == away_team.lower():
                 print(f"{games['home_team']} VS {games['away_team']}")
                 if games['scores'] is not None:
-                    scores: {games['scores'][0], games['scores'][1]}
-                    game_info = [games['home_team'], games['away_team'], scores]
+
+                    scores = [games['scores'][0], games['scores'][1]]
+                    score_1_name = games['scores'][0].get('name')
+                    score_1_value = games['scores'][0].get('score')
+
+                    score_2_name = games['scores'][1].get('name')
+                    score_2_value = games['scores'][1].get('score')
+
+                    if home_team == score_1_name:
+                        home_score = score_1_value
+                        away_score = score_2_value
+                    else:
+                        home_score = score_2_value
+                        away_score = score_1_value
+
+                    # Debugging purposes
+                    # game_info = [games['home_team'], games['away_team'], scores]
+
+                    # Create game_info dict
+                    game_info = {"home_team": games['home_team'], "away_team": games['away_team'], "scores": True, "home_score": home_score, "away_score": away_score, "commence_time": games['commence_time']}
+
+
                     print(game_info)
                     return game_info
+                
                 else:
-                    scores: {None}
-                    game_info = [games['home_team'], games['away_team'], scores]
+                    game_info = {"home_team": games['home_team'], "away_team": games['away_team'], "scores": None, "commence_time": games['commence_time']}
+                    print(game_info)
                     print(f"No scores yet! Game starts at {games['commence_time']}")
+                    return game_info
 
 async def get_scores():
     response = requests.get(url, headers=headers, params=querystring)
@@ -67,7 +92,7 @@ async def get_scores():
             print(f"No scores yet! Game starts at {games['commence_time']}")
 
 async def get_avatar(team):
-
+    print(f"Getting avatar for {team}")
     ####### URL format #######
     ### https://github.com/mhussain790/nfl-discord-bot/blob/main/img/detroit.png?raw=true
 
@@ -75,7 +100,7 @@ async def get_avatar(team):
     ##########################
 
     # Get the list of files
-    img_url_prefix = 'https://github.com/mhussain790/nfl-discord-bot/blob/main/img/'
+    img_url = 'https://raw.githubusercontent.com/mhussain790/nfl-discord-bot/main/img/'
     path = "./img"
     files = os.listdir(path)
 
@@ -111,7 +136,7 @@ async def get_avatar(team):
         file = file.removesuffix(".png")
         if file in name_array:
             print(f"Found {temp} in {name_array}")
-            print(f"{path}/{temp}")
-            return img_url_prefix + '/' + img_url_suffix
+            output = img_url + temp
 
-get_avatar('san francisco 49ers')
+            print(output)
+            return output
